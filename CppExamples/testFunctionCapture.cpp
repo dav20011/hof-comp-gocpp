@@ -14,7 +14,7 @@ static void callFunction(const std::function<void()>& func) {
     func();
 }
 
-void testFunctionCaptureSingle(uint64_t x, uint64_t y) {
+void testFunctionCaptureSingle(uint32_t x, uint32_t y) {
     auto sampleFunction = [x, y] {
         test += x + y;
     };
@@ -26,7 +26,7 @@ void testFunctionCapture() {
     std::cout << "Starting the FunctionCapture test." << std::endl;
     auto start = high_resolution_clock::now();
 
-    for (uint64_t i = 0; i < ITERATIONS; i++) {
+    for (uint32_t i = 0; i < ITERATIONS; i++) {
         testFunctionCaptureSingle(i, i + 1);
     }
 

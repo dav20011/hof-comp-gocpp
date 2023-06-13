@@ -142,6 +142,24 @@ Durch die automatische Anwendung von Konstruktoren in C++ ist es außerdem mögl
 Eine große Schwäche dieser Umsetzung ist jedoch, dass ein Großteil davon in der späteren Anwendungssoftware landet und so die Geschwindigkeit beeinträchtigt.
 Dazu gehören auch Dinge, die bereits der Compiler statisch effizienter lösen könnte.
 
+Zuletzt ist es als Vereinfachung auch möglich einen Default-Wert für Captures zu definieren, sodass man nicht jede Variable einzeln spezifizieren muss.
+Dazu kann man jeweils `=` und `&` nutzen.
+Allerdings muss bei der Nutzung von capture-by-reference beachtet werden, dass die Variable schon gelöscht sein könnte.
+In diesem Beispiel hätte man einen Speicherfehler:
+
+``` cpp
+std::function<int(int)> lambdaSample(int x, int y) {
+    return [&](int z) -> int {
+        return y + x + z;
+    };
+}
+
+int main() {
+    auto func = lambdaSample(1, 2);
+    func(3); // Speicherfehler beim Aufruf: x und y existieren nicht mehr
+}
+```
+
 ### Go
 
 Anders als C++ unterstützt Go schon von Beginn an Funktionen höherer Ordnung und hat diese auch vollständig abstrahiert.
@@ -185,6 +203,20 @@ Bei einer Erstellung einer Funktion höherer Ordnung mit vier Werten im Kontext 
 Dabei handelt es sich um eine Closure. Neben den vier Werten wird außerdem eine Referenz auf die Funktion gespeichert.
 Vor dem Aufruf werden diese Werte von der aufrufenden Funktion wieder auf den Stack gelegt und so Verhält sich der Kontext wie ein zusätzlicher Satz an Parametern.
 
+### Vergleich der Implementierungen
+
+Aufgrund der Verwendung von Closures haben Go und C++ hier die gleiche Basis.
+Bei der Definition eines Lambdas wird in beiden Sprachen implizit ein neuer Typ angelegt, der das Capture speichert.
+In C++ muss der Typ der Captures (by-value oder by-reference) explizit angegeben werden, während der Go Compiler dies automatisch entscheidet.
+
+Dazu muss in C++ explizit ein Wrapper wie `std::function` angegeben werden, der virtuelle Aufrufe für Lambdas ermöglicht, werden Go dies auch automatisch erledigt.
+`std::function` nutzt bei kleinen Captures (<=1 Pointer in glibc) einen internen Speicher und wird so mittels by-value übergeben, während größere Captures immer auf dem Heap gespeichert und by-reference übegeben werden.
+Go entscheidet sich wie auch für andere Variablen anhand der Nutzung für einen Speicherort, was eine deutliche Optimierung darstellt.
+Da es in neueren C++ Versionen nicht mehr möglich ist, den Allocator für `std::function` zu spezifizieren, kann diese Technik in C++ auch nicht ohne Weiteres manuell genutzt werden.
+
+Zuletzt kann Go bei entsprechender Notwendigkeit, durch das Capture referenzierte Variablen automatisch auf dem Heap speichern.
+In C++ muss man darauf manuell achten, was die Fehleranfälligkeit erhöht.
+
 ## Performance-Untersuchung
 
 Ziel dieser Untersuchung ist es, die verschiedenen Varianten der Umsetzung in C++ mit Go hinsichtlich ihrer Performance zu untersuchen.
@@ -205,18 +237,21 @@ Zur besseren Vergleichbarkeit sind diese Szenarien nicht realitätsnahe, weshalb
 
 ### Ergebnisse
 
-| Test              | Mittelwert | Variationskoeffizient |
-|-------------------|------------|-----------------------|
-| FunctionPointer   | 23,12 ms   | 8,53 %                |
-| Lambda            | 34,47 ms   | 5,28 %                |
-| LambdaCapture     | 75,44 ms   | 8,25 %                |
-| FunctionPure      | 320,79 ms  | 2,57 %                |
-| FunctionCapture   | 921,48 ms  | 2,06 %                |
-| FunctionHeap      | 976,25 ms  | 3,93 %                |
-| StructHeap        | 173,16 ms  | 6,64 %                |
-| GoFunctionPure    | 43,67 ms   | 9,90 %                |
-| GoFunctionCapture | 46,90 ms   | 4,95 %                |
-| GoFunctionHeap    | 65,96 ms   | 9,61 %                |
+| Test            | Mittelwert C++ | Mittelwert Go         | max. Variationskoeffizient¹ |
+|-----------------|----------------|-----------------------|-----------------------------|
+| FunctionPointer | 23,12 ms       | n. a.²                | 8,53 %                      |
+| Lambda          | 34,47 ms       | n. a.²                | 5,28 %                      |
+| LambdaCapture   | 75,44 ms       | n. a.²                | 8,25 %                      |
+| FunctionPure    | 320,79 ms      | 43,67 ms / 236,92 ms³ | 9,90 %                      |
+| FunctionCapture | 353,56 ms      | 46,90 ms / 444,31 ms³ | 4,95 %                      |
+| FunctionHeap    | 976,25 ms      | 65,96 ms / 467,85 ms³ | 9,61 %                      |
+| StructHeap      | 173,16 ms      | n. a.²                | 6,64 %                      |
+| LambdaLift⁴     | 92,84 ms       | n. a.²                | 4,50 %                      |
+
+1. Der maximale Variationskoeffizient (relative Standardabweichung) aller Testreihen
+2. Diese Testfälle lassen sich in Go nicht abbilden
+3. Gleicher Test mit einer erzwungenen Heap-Allokierung
+4. Manuelles Lambda Lifting des FunctionCapture Tests in C++
 
 ### Auswertung
 
@@ -227,5 +262,33 @@ Die Umsetzung der Laufzeit scheint ein signifikanter Nachteil zu sein, der sich 
 Entgegen der Erwartung hat es deshalb auch keinen großen Einfluss mehr, wenn man durch ein größeres Capture eine Heap-Zuweisung erzwingt.
 Deutlich performanter als `std::function` ist dagegen eine direkte Übersetzung mit Strukturen und doppelter Indirektion (aufgrund von virtual).
 
-Go kann zwar nicht die Geschwindigkeit von einfacher Indirektion mit C++ Funktionspointern erreichen, ist aber mit Funktionen höherer Ordnung nicht weit davon entfernt und bleibt bei allen direkt übersetzten Tests sehr stabil.
-Zwar ist davon auszugehen, dass Speicherzuweisungen von Go schneller sind als die eine Standard malloc-Implementierung, jedoch kommt hier der Verdacht auf, dass Go komplett auf die Nutzung des Heaps verzichtet hat.
+Go kann zwar nicht die Geschwindigkeit von einfacher Indirektion mit C++ Funktionspointern erreichen,
+ist aber mit Funktionen höherer Ordnung nicht weit davon entfernt.
+Hier kann Go vor allem dadurch punkten, dass es der Compiler automatisch zwischen Stack- und Heap-Allokationen entscheidet.
+In Fällen in denen der Compiler für den Stack entscheidet, beispielsweise für Filter- oder Mappingoperationen in der funktionalen Programmierung,
+ist Go sogar eine ganze Größenordnung schneller als C++.
+Erzwingt man jedoch wie in den zweiten Tests eine Heap-Allokation, wird auch die Go-Implementierung deutlich langsamer.
+
+Hier muss außerdem in Betracht gezogen werden, dass diese Tests das Gesamtsystem testen und nicht nur die jeweiligen Implementierungen von Funktionen höherer Ordnung.
+Die Standard-Speicherverwaltung von Go ermöglicht schnellere Speicherzuweisungen und der Zeitaufwand für Speicherfreigaben durch den Concurrent Garbage Collector werden hier gar nicht erfasst.
+Es ist auch möglich C++ mit solch einer Speicherverwaltung einzusetzen, wodurch die Unterschiede geringer ausfallen sollten.
+
+# Fazit
+
+Trotz des gleichen Grundprinzips hinter Funktionen höherer Ordnung in C++ und Go gibt es erhebliche Unterschiede in der konkreten Implementierung.
+Während C++ sehr viele verschiedene Möglichkeiten bietet, ist die Implementierung der Standardbibliothek flexibel aber auch langsam, da sie viele Probleme zur Laufzeit löst.
+Go legt sich hier auf eine Variante fest und kann diese so direkt im Compiler umsetzen, was in einer effizienteren Implementierung resultiert.
+So kann es neben der einfacheren Programmierung sinnvoll sein, bei Programmen welche Funktionen höherer Ordnung intensiv nutzen,
+aufgrund der höheren Effizienz Go gegenüber C++ vorzuziehen, auch wenn C++ in normalen Anwendungsszenarien schneller ist.
+
+Sollen dagegen statt Closures Lambda Lifting zum Einsatz kommen, muss man dies selbst übersetzen.
+Auch in anderen Programmiersprachen kommt Lambda Lifting durch den Compiler nur sehr selten zum Einsatz.
+
+# Quellen
+
+* Closure Conversion: https://matt.might.net/articles/closure-conversion/
+* Thomas Johnsson. Lambda Lifting: Transforming Programs to Recursive Equations
+* C++ lambda expressions: https://en.cppreference.com/w/cpp/language/lambda
+* Go assembly: https://github.com/teh-cmc/go-internals/blob/master/chapter1_assembly_primer/README.md
+* Lambda lifting: https://pp.ipd.kit.edu/uploads/publikationen/graf19sll.pdf
+* C++ std::function: https://github.com/gcc-mirror/gcc/blob/master/libstdc%2B%2B-v3/include/bits/std_function.h

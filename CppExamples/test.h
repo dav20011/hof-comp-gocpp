@@ -13,3 +13,5 @@ void testFunctionCapture();
 void testFunctionHeap();
 
 void testStructHeap();
+
+void testLambdaLift();

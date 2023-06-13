@@ -24,6 +24,8 @@ int main(int argc, char *argv[]) {
         testFunctionHeap();
     } else if (test == "StructHeap") {
         testStructHeap();
+    } else if (test == "LambdaLift") {
+        testLambdaLift();
     } else {
         std::cout << "Unknown test" << std::endl;
         return 1;
