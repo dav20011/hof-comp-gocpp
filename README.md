@@ -237,16 +237,16 @@ Zur besseren Vergleichbarkeit sind diese Szenarien nicht realitätsnahe, weshalb
 
 ### Ergebnisse
 
-| Test            | Mittelwert C++ | Mittelwert Go         | max. Variationskoeffizient¹ |
-|-----------------|----------------|-----------------------|-----------------------------|
-| FunctionPointer | 23,12 ms       | n. a.²                | 8,53 %                      |
-| Lambda          | 34,47 ms       | n. a.²                | 5,28 %                      |
-| LambdaCapture   | 75,44 ms       | n. a.²                | 8,25 %                      |
-| FunctionPure    | 320,79 ms      | 43,67 ms / 236,92 ms³ | 9,90 %                      |
-| FunctionCapture | 353,56 ms      | 46,90 ms / 444,31 ms³ | 4,95 %                      |
-| FunctionHeap    | 976,25 ms      | 65,96 ms / 467,85 ms³ | 9,61 %                      |
-| StructHeap      | 173,16 ms      | n. a.²                | 6,64 %                      |
-| LambdaLift⁴     | 92,84 ms       | n. a.²                | 4,50 %                      |
+| Test            | Mittelwert C++                                                                                          | Mittelwert Go                                                                                                                                                                                                    | max. Variationskoeffizient¹ |
+|-----------------|---------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------|
+| FunctionPointer | [23,12 ms](https://github.com/dav20011/hof-comp-gocpp/blob/master/CppExamples/testFunctionPointer.cpp)  | n. a.²                                                                                                                                                                                                           | 8,53 %                      |
+| Lambda          | [34,47 ms](https://github.com/dav20011/hof-comp-gocpp/blob/master/CppExamples/testLambda.cpp)           | n. a.²                                                                                                                                                                                                           | 5,28 %                      |
+| LambdaCapture   | [75,44 ms](https://github.com/dav20011/hof-comp-gocpp/blob/master/CppExamples/testLambdaCapture.cpp)    | n. a.²                                                                                                                                                                                                           | 8,25 %                      |
+| FunctionPure    | [320,79 ms](https://github.com/dav20011/hof-comp-gocpp/blob/master/CppExamples/testFunctionPure.cpp)    | [43,67 ms](https://github.com/dav20011/hof-comp-gocpp/blob/master/GoExamples/FunctionPure_test.go) / [236,92 ms³](https://github.com/dav20011/hof-comp-gocpp/blob/master/GoExamples/FunctionPure2_test.go)       | 9,90 %                      |
+| FunctionCapture | [353,56 ms](https://github.com/dav20011/hof-comp-gocpp/blob/master/CppExamples/testFunctionCapture.cpp) | [46,90 ms](https://github.com/dav20011/hof-comp-gocpp/blob/master/GoExamples/FunctionCapture_test.go) / [444,31 ms³](https://github.com/dav20011/hof-comp-gocpp/blob/master/GoExamples/FunctionCapture2_test.go) | 4,95 %                      |
+| FunctionHeap    | [976,25 ms](https://github.com/dav20011/hof-comp-gocpp/blob/master/CppExamples/testFunctionHeap.cpp)    | [65,96 ms](https://github.com/dav20011/hof-comp-gocpp/blob/master/GoExamples/FunctionHeap_test.go) / [467,85 ms³](https://github.com/dav20011/hof-comp-gocpp/blob/master/GoExamples/FunctionHeap2_test.go)       | 9,61 %                      |
+| StructHeap      | [173,16 ms](https://github.com/dav20011/hof-comp-gocpp/blob/master/CppExamples/testStructHeap.cpp)      | n. a.²                                                                                                                                                                                                           | 6,64 %                      |
+| LambdaLift⁴     | [92,84 ms](https://github.com/dav20011/hof-comp-gocpp/blob/master/CppExamples/testLambdaLift.cpp)       | n. a.²                                                                                                                                                                                                           | 4,50 %                      |
 
 1. Der maximale Variationskoeffizient (relative Standardabweichung) aller Testreihen
 2. Diese Testfälle lassen sich in Go nicht abbilden
