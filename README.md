@@ -15,7 +15,7 @@ In der Programmierung kann dieses `g` dabei in einigen verschiedenen Varianten a
 ### Varianten
 
 Das einfachste Unterscheidungsmerkmal ist die Benennung von `g`.
-`g` kann eine reguläre Funktion mit einem eigenen Namen, jedoch ist in vielen Programmiersprachen auch die deklaration einer Funktion in beispielweise dem Kontext eines Funktionsaufrufs möglich.
+`g` kann eine reguläre Funktion mit einem eigenen Namen sein, jedoch ist in vielen Programmiersprachen auch die deklaration einer Funktion in beispielweise dem Kontext eines Funktionsaufrufs möglich.
 In diesem Fall spricht man von einer anonymen Funktion bzw. einem Lambda.
 Auch wenn der Begriff Lambda auch häufig fälschlicherweise zur Beschreibung anderer Eigenschaften genutzt wird, hat ein Lambda im eigentlichen Sinne keine Bedeutung für die Semantik und wird hier deshalb nicht näher betrachtet.
 
@@ -94,7 +94,7 @@ Hinweis: Für eine vollständige Übersetzung mit Polymorphie für Closures wär
 ### Lambda Lifting
 
 Lambda Lifting ist ein Metaprozess, bei welchem die Daten, die man in einer Closure speichern würde, die sog. freien Variablen, zu Parametern umgewandelt werden.
-Um dies zu erreichen, müssen alle Funktionen, die im Call Stack zwischen der higher-order Funktion und dem Aufruf liegen, umstrukturiert werden.
+Um dies zu erreichen, müssen alle Funktionen, die im Call Stack zwischen der Funktion höherer Ordnung und dem Aufruf liegen, umstrukturiert werden.
 Aus dem obigen Beispiel für Closures würde bei Lambda Lifting ein Trivialbeispiel der Addition entstehen:
 
 ``` cpp
@@ -132,7 +132,7 @@ Da es sich wie eine reguläre Struktur verhält, wird bei einer Übergabe die ge
 
 Da diese Funktion für sich noch sehr rudimentär ist, wird sie durch `std::function` vervollständigt.
 `std::function` ist ein Containertyp für aufrufbare Typen, der mittels Templates viele Funktionen anbietet:
-* Referenzierung eines Aufrufbaren Typs, wie einer Funktion, Methode, eines Functors oder eines Lambdas
+* Referenzierung eines aufrufbaren Typs, wie einer Funktion, Methode, eines Functors oder eines Lambdas
 * Aufruf per Operatorenüberladung
 * Zusammenfassung aller gleichartigen aufrufbaren Typen unter jeweils einer Template-Instanz, wie beispielsweise std::function<int(int)>
 * Speicherung des Kontextes in einem kleinen internen Puffer
@@ -209,8 +209,8 @@ Aufgrund der Verwendung von Closures haben Go und C++ hier die gleiche Basis.
 Bei der Definition eines Lambdas wird in beiden Sprachen implizit ein neuer Typ angelegt, der das Capture speichert.
 In C++ muss der Typ der Captures (by-value oder by-reference) explizit angegeben werden, während der Go Compiler dies automatisch entscheidet.
 
-Dazu muss in C++ explizit ein Wrapper wie `std::function` angegeben werden, der virtuelle Aufrufe für Lambdas ermöglicht, werden Go dies auch automatisch erledigt.
-`std::function` nutzt bei kleinen Captures (<=1 Pointer in glibc) einen internen Speicher und wird so mittels by-value übergeben, während größere Captures immer auf dem Heap gespeichert und by-reference übegeben werden.
+Dazu muss in C++ explizit ein Wrapper wie `std::function` angegeben werden, der virtuelle Aufrufe für Lambdas ermöglicht, während Go dies auch automatisch erledigt.
+`std::function` nutzt bei kleinen Captures (<=1 Pointer in glibc) einen internen Speicher und wird so by-value übergeben, während größere Captures immer auf dem Heap gespeichert und by-reference übegeben werden.
 Go entscheidet sich wie auch für andere Variablen anhand der Nutzung für einen Speicherort, was eine deutliche Optimierung darstellt.
 Da es in neueren C++ Versionen nicht mehr möglich ist, den Allocator für `std::function` zu spezifizieren, kann diese Technik in C++ auch nicht ohne Weiteres manuell genutzt werden.
 
@@ -255,17 +255,17 @@ Zur besseren Vergleichbarkeit sind diese Szenarien nicht realitätsnahe, weshalb
 
 ### Auswertung
 
-Die Ergebnisse für einfache Funktionstypen in C++ liegt in einem erwartbaren Bereich.
-Auffällig, dass selbst ein einfaches Lambda ohne Capture bereits einen kleinen Overhead hat, der sich durch einen Capture noch einmal deutlich erhöht.
+Die Ergebnisse für einfache Funktionstypen in C++ liegen in einem erwartbaren Bereich (vgl. Test FunctionPointer).
+Auffällig ist, dass selbst ein einfaches Lambda ohne Capture bereits einen kleinen Overhead hat, der sich durch einen Capture noch einmal deutlich erhöht (vgl. Tests Lambda & LambdaCapture).
 Die Ausführungszeit erhöht sich dagegen massiv, sobald `std::function` verwendet wird, selbst ohne Capture.
-Die Umsetzung der Laufzeit scheint ein signifikanter Nachteil zu sein, der sich durch die Verwendung von Captures noch einmal deutlich erhöht.
-Entgegen der Erwartung hat es deshalb auch keinen großen Einfluss mehr, wenn man durch ein größeres Capture eine Heap-Zuweisung erzwingt.
-Deutlich performanter als `std::function` ist dagegen eine direkte Übersetzung mit Strukturen und doppelter Indirektion (aufgrund von virtual).
+Die Umsetzung der Laufzeit scheint ein signifikanter Nachteil zu sein, der sich durch die Verwendung von Captures noch einmal deutlich erhöht (vgl. Tests FunktionPure & FunctionCapture).
+Eine weitere deutliche Verlangsamung kommt dazu, wenn durch größere Captures eine teure Heap-Zuweisung erzwungen wird (vgl. Test FunctionsHeap).
+Deutlich performanter als `std::function` ist dagegen eine direkte Übersetzung mit Strukturen und doppelter Indirektion (vgl. Test StructHeap).
 
 Go kann zwar nicht die Geschwindigkeit von einfacher Indirektion mit C++ Funktionspointern erreichen,
 ist aber mit Funktionen höherer Ordnung nicht weit davon entfernt.
-Hier kann Go vor allem dadurch punkten, dass es der Compiler automatisch zwischen Stack- und Heap-Allokationen entscheidet.
-In Fällen in denen der Compiler für den Stack entscheidet, beispielsweise für Filter- oder Mappingoperationen in der funktionalen Programmierung,
+Hier kann Go vor allem dadurch punkten, dass der Compiler automatisch zwischen Stack- und Heap-Allokationen entscheidet.
+In Fällen in denen sich der Compiler für den Stack entscheidet, beispielsweise für Filter- oder Mappingoperationen in der funktionalen Programmierung,
 ist Go sogar eine ganze Größenordnung schneller als C++.
 Erzwingt man jedoch wie in den zweiten Tests eine Heap-Allokation, wird auch die Go-Implementierung deutlich langsamer.
 
@@ -281,7 +281,7 @@ Go legt sich hier auf eine Variante fest und kann diese so direkt im Compiler um
 So kann es neben der einfacheren Programmierung sinnvoll sein, bei Programmen welche Funktionen höherer Ordnung intensiv nutzen,
 aufgrund der höheren Effizienz Go gegenüber C++ vorzuziehen, auch wenn C++ in normalen Anwendungsszenarien schneller ist.
 
-Sollen dagegen statt Closures Lambda Lifting zum Einsatz kommen, muss man dies selbst übersetzen.
+Soll dagegen statt Closures Lambda Lifting zum Einsatz kommen, muss man dies selbst übersetzen.
 Auch in anderen Programmiersprachen kommt Lambda Lifting durch den Compiler nur sehr selten zum Einsatz.
 
 # Quellen
